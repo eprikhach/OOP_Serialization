@@ -1,13 +1,12 @@
-# OOP_Serialization
+# taskPY1
 
 <p> In this task we will work with OOP, SOLID
 principles and serialization.</p>
 
 <p> To solve this task we need:
-1. Create base classes for entity.
-2. Implement deserialization. 
-3. Create new python objects with existed data.
-4. Implement Serialization to JSON and XML.</p>
+1. Deserialize JSON files.
+2. Merge lists
+3. Implement serialization to JSON and XML.</p>
 
 
 # Q & A
@@ -37,7 +36,7 @@ the built-in xml.dom.minidom module? </p>*
   one of the two formats
 - SOLID principles
 - OOP
-- Script must contain input parameters
+- Script must contains input parameters
 
 # How to run a script
 
@@ -50,9 +49,9 @@ the built-in xml.dom.minidom module? </p>*
 
 - To run the script
   you need to copy the path to the .py file,
-  path to room.json, students.json, choose on of
+  path to room.json, students.json, choose one of
   two serialization format and 
   write the following 
   construction: "python3 path-to-file
-  path-to-rooms.json path-to-students.json xml/json", 
-  where path-to-file is your path.
+  path-to-rooms.json path-to-students.json xml/json"
+  into terminal/command line.

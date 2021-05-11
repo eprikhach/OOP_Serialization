@@ -2,15 +2,13 @@
 principles and serialization.
 
 To solve this task we need:
-1. Create base classes for entity.
-2. Implement deserialization.
-3. Create new python objects with existed data.
-4. Implement serialization to JSON and XML.
+1. Deserialize JSON files.
+2. Merge lists
+3. Implement serialization to JSON and XML.
 """
 
-import json
-import re
 from xml.dom.minidom import parseString
+import json
 import sys
 
 from dicttoxml import dicttoxml
@@ -28,152 +26,30 @@ logger.add('logs.log', level='INFO',
            rotation='1 MB', compression='zip')
 
 
-class Student:
-    """Base class for students."""
-
-    instances = []
-
-    def __init__(self, student_id: int, student_name: str, room: int):
-        self.student_id = student_id
-        self.name = student_name
-        self.room = room
-        self.__class__.instances.append(self)
-
-
-class Room:
-    """Base class for rooms."""
-
-    instances = []
-
-    def __init__(self, room_id: int, room_name: str):
-        self.room_id = room_id
-        self.room_name = room_name
-        self.__class__.instances.append(self)
-
-
-class StudentsInRoom:
-    """Base class for students, that livings in a room"""
-
-    instances = []
-
-    def __init__(self, room_number: int, students_name: list):
-        self.room_number = room_number
-        self.students_name = students_name
-        self.__class__.instances.append(self)
-
-
-class Deserialize:
-    """Base class for implementing data deserialization."""
-
-    @logger.catch
-    def from_file(self):
-        raise NotImplementedError
-
-
-class StudentsDeserializeFromJSON(Deserialize):
-    """Class, that implements deserialization to Python objects."""
-
-    def __init__(self, path_to_file):
-        self.path_to_file = path_to_file
-
-    @logger.catch
-    def from_file(self):
-        """Deserialization json structure into Student instances.
-
-        :return: None
-        """
-
-        with open(self.path_to_file, 'r') as json_file:
-            students_list = json.load(json_file)
-            for student in students_list:
-
-                Student(student_id=student['id'],
-                        student_name=student['name'],
-                        room=student['room'])
-
-        logger.info('Json file with students info was deserialized, '
-                    'Student has a {} instances'.
-                    format(len(Student.instances)))
-
-
-class RoomsDeserializeFromJSON(Deserialize):
-    """Class, that implements deserialization into Python objects."""
-
-    def __init__(self, path_to_file):
-        self.path_to_file = path_to_file
-
-    @logger.catch
-    def from_file(self):
-        """Deserialization json structure to Rooms instances.
-
-        :return: None
-        """
-
-        with open(self.path_to_file, 'r') as json_file:
-            rooms_list = json.load(json_file)
-            for room in rooms_list:
-                Room(room_id=room['id'], room_name=room['name'])
-
-        logger.info('Json file with room info was deserialized, '
-                    'Room has a {} instances now.'.
-                    format(len(Room.instances)))
-
-
-class DataDumping:
-    """Base class for data dumping."""
-
-    def dump_data(self):
-        raise NotImplementedError
-
-
-class StudentsInRoomDumping(DataDumping):
-    """Dumping a new structure data to StudentsInRoom."""
-
-    @staticmethod
-    @logger.catch
-    def dump_data():
-        """Converts fields from different class instances into new
-        Python objects.
-
-        :return: None
-        """
-
-        for room in Room.instances:
-            students_in_room = []
-            for student in Student.instances:
-                if int(re.search(r'\d+', room.room_name).group(0)) \
-                        == student.room:
-                    # re is used here to check room number,
-                    # id may not be always = room number
-                    students_in_room.append(student.name)
-            StudentsInRoom(room_number=room.room_name,
-                           students_name=students_in_room)
-        logger.info("StudentsInRoom was dumped and now contains {} "
-                    "instances".format(len(StudentsInRoom.instances)))
-
-
-class Serialize:
+class Serializer:
     """Base class, that implements serialization Python object"""
 
-    @staticmethod
-    def to_format():
+    def __init__(self, students_in_room: list):
+        self.students_in_room = students_in_room
+
+    def to_format(self):
         raise NotImplementedError
 
 
-class SerializeToXML(Serialize):
+class XMLSerializer(Serializer):
     """Class that implements serialization to XML."""
 
-    @staticmethod
+    def __init__(self, students_in_room: list):
+        super().__init__(students_in_room)
+
     @logger.catch
-    def to_format():
-        """Converts a python object to XML.
+    def to_format(self):
+        """Converts a lists of dicts to XML.
 
         :return: None
         """
-        students_in_room = []
-        for room_info in StudentsInRoom.instances:
-            students_in_room.append(room_info.__dict__)
-        xml_string = dicttoxml(students_in_room,
+
+        xml_string = dicttoxml(self.students_in_room,
                                custom_root='students_in_room',
                                # dict_to_xml(item_func) need function,
                                # that generate the element name for
@@ -189,42 +65,94 @@ class SerializeToXML(Serialize):
         logger.info('StudentsInRoom was serialized into XML.')
 
 
-class SerializeToJSON(Serialize):
+class JSONSerializer(Serializer):
     """Class that implements serialization to XML."""
 
-    @staticmethod
+    def __init__(self, students_in_room: list):
+        super().__init__(students_in_room)
+
     @logger.catch
-    def to_format():
-        """Converts a python object to JSON.
+    def to_format(self):
+        """Converts a list of dicts to JSON.
 
         :return: None
         """
 
-        students_in_room = []
-        for room_info in StudentsInRoom.instances:
-            students_in_room.append(room_info.__dict__)
-
         with open('students_in_room.json', 'w') as json_file:
-            json.dump(students_in_room, json_file, indent=2)
+            json.dump(self.students_in_room, json_file, indent=2)
 
         logger.info('StudentsInRoom was serialized into JSON.')
 
 
 @logger.catch
-def main(room_json, student_json, serialize_format):
-    if str(serialize_format).lower() == 'json':
-        RoomsDeserializeFromJSON(str(room_json)).from_file()
-        StudentsDeserializeFromJSON(str(student_json)).from_file()
-        StudentsInRoomDumping().dump_data()
-        SerializeToJSON().to_format()
-    elif str(serialize_format).lower() == 'xml':
-        RoomsDeserializeFromJSON(str(room_json)).from_file()
-        StudentsDeserializeFromJSON(str(student_json)).from_file()
-        StudentsInRoomDumping().dump_data()
-        SerializeToXML().to_format()
-    else:
-        print('Incorrect serialization format')
+def get_students_from_json(students_json: str):
+    """Getting students information from JSON object.
+
+    :param students_json: Path to students JSON
+    :return: list
+    """
+
+    with open(students_json, 'r') as json_file:
+        students_list = json.load(json_file)
+
+    logger.info('Students.json was deserialized to list of dicts.')
+
+    return students_list
+
+
+def get_rooms_from_json(rooms_json: str):
+    """Getting students information from JSON object.
+
+        :param rooms_json: Path to rooms JSON
+        :return: list
+        """
+
+    with open(rooms_json, 'r') as json_file:
+        rooms_list = json.load(json_file)
+
+    logger.info('Rooms.json was deserialized to list of dicts.')
+
+    return rooms_list
+
+
+@logger.catch
+def list_merge(rooms_list: list, students_list: list):
+    """Merging two lists.
+
+    :param rooms_list: List of rooms.
+    :param students_list: List of students.
+    :return: list
+    """
+
+    students_in_room = []
+
+    for room in rooms_list:
+        students_in_room.append({'id': room['id'],
+                                 'room_name': room['name'],
+                                 'students': []})
+
+    for student in students_list:
+        if student['room'] == students_in_room[student['room']]['id']:
+            students_in_room[student['room']]['students'] \
+                .append(student['name'])
+
+    logger.info('Students_in_room list of dicts was merged.')
+
+    return students_in_room
+
+
+@logger.catch
+def main(room_json: str, student_json: str, serialize_format: str):
+    students = get_students_from_json(student_json)
+    rooms = get_rooms_from_json(room_json)
+    students_in_room = list_merge(rooms, students)
+    if serialize_format.lower() == 'xml':
+        serializer_object = XMLSerializer(students_in_room)
+        serializer_object.to_format()
+    if serialize_format.lower() == 'json':
+        serializer_object = JSONSerializer(students_in_room)
+        serializer_object.to_format()
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3]))
