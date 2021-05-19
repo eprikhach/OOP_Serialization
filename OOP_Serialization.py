@@ -9,7 +9,7 @@ To solve this task we need:
 
 from xml.dom.minidom import parseString
 import json
-import sys
+import argparse
 
 from dicttoxml import dicttoxml
 # Logging third-party tools is mainly used here for debugging. I
@@ -35,6 +35,9 @@ class Serializer:
     def to_format(self):
         raise NotImplementedError
 
+    def to_file(self):
+        raise NotImplementedError
+
 
 class XMLSerializer(Serializer):
     """Class that implements serialization to XML."""
@@ -42,11 +45,10 @@ class XMLSerializer(Serializer):
     def __init__(self, students_in_room: list):
         super().__init__(students_in_room)
 
-    @logger.catch
     def to_format(self):
-        """Converts a lists of dicts to XML.
+        """Converts a lists of dicts to XML string.
 
-        :return: None
+        :return: XML in string representation
         """
 
         xml_string = dicttoxml(self.students_in_room,
@@ -58,9 +60,17 @@ class XMLSerializer(Serializer):
                                attr_type=False)
 
         xml = parseString(xml_string).toprettyxml()
+        return xml
+
+    @logger.catch
+    def to_file(self):
+        """Converts a lists of dicts to XML string.
+
+        :return: None
+        """
 
         with open('students_in_room.xml', 'w') as xml_file:
-            xml_file.write(xml)
+            xml_file.write(XMLSerializer.to_format(self))
 
         logger.info('StudentsInRoom was serialized into XML.')
 
@@ -73,13 +83,23 @@ class JSONSerializer(Serializer):
 
     @logger.catch
     def to_format(self):
-        """Converts a list of dicts to JSON.
+        """Converts a list of dicts to JSON string.
+
+        :return: JSON in string representation.
+        """
+
+        json_string = json.dumps(self.students_in_room, indent=2)
+        return json_string
+
+    @logger.catch
+    def to_file(self):
+        """Fill json file with data.
 
         :return: None
         """
-
+        json_string = JSONSerializer.to_format(self)
         with open('students_in_room.json', 'w') as json_file:
-            json.dump(self.students_in_room, json_file, indent=2)
+            json_file.write(json_string)
 
         logger.info('StudentsInRoom was serialized into JSON.')
 
@@ -141,18 +161,34 @@ def list_merge(rooms_list: list, students_list: list):
     return students_in_room
 
 
+def args_parser():
+    """Script arguments parser.
+
+    :return: class
+    """
+    parser = argparse.ArgumentParser(
+        description='Parser for script, which implement serialization')
+    parser.add_argument('-s', '--students', type=str,
+                        help='Path to students.json')
+    parser.add_argument('-r', '--rooms', type=str,
+                        help='Path to rooms.json')
+    parser.add_argument('-f', '--format', choices=['json', 'xml'],
+                        help="Serialization format")
+    return parser
+
+
 @logger.catch
 def main(room_json: str, student_json: str, serialize_format: str):
     students = get_students_from_json(student_json)
     rooms = get_rooms_from_json(room_json)
     students_in_room = list_merge(rooms, students)
     if serialize_format.lower() == 'xml':
-        serializer_object = XMLSerializer(students_in_room)
-        serializer_object.to_format()
+        XMLSerializer(students_in_room).to_file()
     if serialize_format.lower() == 'json':
-        serializer_object = JSONSerializer(students_in_room)
-        serializer_object.to_format()
+        JSONSerializer(students_in_room).to_file()
 
 
 if __name__ == '__main__':
-    main(str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3]))
+    args_namespace = args_parser().parse_args()
+    main(args_namespace.rooms, args_namespace.students,
+         args_namespace.format)
