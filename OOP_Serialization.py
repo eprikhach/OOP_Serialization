@@ -61,15 +61,9 @@ class XMLSerializer(Serializer):
                                attr_type=False)
 
         xml = parseString(xml_string).toprettyxml()
-<<<<<<< HEAD
 
         logger.info('Data was serialized into XML format.')
 
-=======
-
-        logger.info('Data was serialized into XML format.')
-
->>>>>>> dev
         return xml
 
 
@@ -188,26 +182,6 @@ def list_merge(rooms_list: list, students_list: list):
     return students_in_room
 
 
-<<<<<<< HEAD
-@logger.catch
-def args_parser():
-    """Script arguments parser.
-
-    :return: class
-    """
-    parser = argparse.ArgumentParser(
-        description='Parser for script, which implement serialization')
-    parser.add_argument('-s', '--students', type=str,
-                        help='Path to students.json')
-    parser.add_argument('-r', '--rooms', type=str,
-                        help='Path to rooms.json')
-    parser.add_argument('-f', '--format', choices=['json', 'xml'],
-                        help="Serialization format")
-    return parser
-
-
-=======
->>>>>>> dev
 @logger.catch
 def main(room_json: str, student_json: str, serialize_format: str):
     students = get_students_from_json(student_json)
