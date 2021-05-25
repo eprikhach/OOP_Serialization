@@ -6,7 +6,8 @@ principles and serialization.</p>
 <p> To solve this task we need:
 1. Deserialize JSON files.
 2. Merge lists
-3. Implement serialization to JSON and XML.</p>
+3. Implement serialization to JSON and XML.
+4. Write JSON and XML structures to files. </p>
 
 
 # Q & A
