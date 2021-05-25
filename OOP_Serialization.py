@@ -35,9 +35,6 @@ class Serializer:
     def to_format(self):
         raise NotImplementedError
 
-    def to_file(self):
-        raise NotImplementedError
-
 
 class XMLSerializer(Serializer):
     """Class that implements serialization to XML."""
@@ -60,19 +57,10 @@ class XMLSerializer(Serializer):
                                attr_type=False)
 
         xml = parseString(xml_string).toprettyxml()
+
+        logger.info('Data was serialized into XML format.')
+
         return xml
-
-    @logger.catch
-    def to_file(self):
-        """Converts a lists of dicts to XML string.
-
-        :return: None
-        """
-
-        with open('students_in_room.xml', 'w') as xml_file:
-            xml_file.write(XMLSerializer.to_format(self))
-
-        logger.info('StudentsInRoom was serialized into XML.')
 
 
 class JSONSerializer(Serializer):
@@ -89,19 +77,47 @@ class JSONSerializer(Serializer):
         """
 
         json_string = json.dumps(self.students_in_room, indent=2)
+
+        logger.info('Data was serialized into JSON format.')
+
         return json_string
+
+
+class FileWriter:
+    def __init__(self, serialized_structure):
+        self.serialized_structure = serialized_structure
+
+    def to_file(self):
+        raise NotImplementedError
+
+
+class JSONWriter(FileWriter):
+
+    def __init__(self, serialized_structure):
+        super().__init__(serialized_structure)
 
     @logger.catch
     def to_file(self):
-        """Fill json file with data.
+        """Write information into json.
 
         :return: None
         """
-        json_string = JSONSerializer.to_format(self)
-        with open('students_in_room.json', 'w') as json_file:
-            json_file.write(json_string)
+        with open('students_in_room.json', 'w') as xml_file:
+            xml_file.write(self.serialized_structure)
 
-        logger.info('StudentsInRoom was serialized into JSON.')
+        logger.info('JSON structure was recorded.')
+
+
+class XMLWriter(FileWriter):
+    def __init__(self, serialized_structure):
+        super().__init__(serialized_structure)
+
+    @logger.catch
+    def to_file(self):
+        with open('students_in_room.xml', 'w') as xml_file:
+            xml_file.write(self.serialized_structure)
+
+        logger.info('XML structure was recorded.')
 
 
 @logger.catch
@@ -120,6 +136,7 @@ def get_students_from_json(students_json: str):
     return students_list
 
 
+@logger.catch
 def get_rooms_from_json(rooms_json: str):
     """Getting students information from JSON object.
 
@@ -161,6 +178,7 @@ def list_merge(rooms_list: list, students_list: list):
     return students_in_room
 
 
+@logger.catch
 def args_parser():
     """Script arguments parser.
 
@@ -183,9 +201,11 @@ def main(room_json: str, student_json: str, serialize_format: str):
     rooms = get_rooms_from_json(room_json)
     students_in_room = list_merge(rooms, students)
     if serialize_format.lower() == 'xml':
-        XMLSerializer(students_in_room).to_file()
+        serialized_xml = XMLSerializer(students_in_room).to_format()
+        XMLWriter(serialized_xml).to_file()
     if serialize_format.lower() == 'json':
-        JSONSerializer(students_in_room).to_file()
+        serialized_json = JSONSerializer(students_in_room).to_format()
+        JSONWriter(serialized_json).to_file()
 
 
 if __name__ == '__main__':
