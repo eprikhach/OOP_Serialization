@@ -5,6 +5,7 @@ To solve this task we need:
 1. Deserialize JSON files.
 2. Merge lists
 3. Implement serialization to JSON and XML.
+4. Write JSON and XML structures to files.
 """
 
 from xml.dom.minidom import parseString
@@ -12,10 +13,13 @@ import json
 import argparse
 
 from dicttoxml import dicttoxml
+
 # Logging third-party tools is mainly used here for debugging. I
 # thought about catching critical situations of different levels,
 # but this would greatly inflate the program.
 from loguru import logger
+
+from CLI import args_parser
 
 # Removing basic logging handler, which is used for debugging.
 # Users don't need to know what's going on in the program.
@@ -57,9 +61,15 @@ class XMLSerializer(Serializer):
                                attr_type=False)
 
         xml = parseString(xml_string).toprettyxml()
+<<<<<<< HEAD
 
         logger.info('Data was serialized into XML format.')
 
+=======
+
+        logger.info('Data was serialized into XML format.')
+
+>>>>>>> dev
         return xml
 
 
@@ -178,6 +188,7 @@ def list_merge(rooms_list: list, students_list: list):
     return students_in_room
 
 
+<<<<<<< HEAD
 @logger.catch
 def args_parser():
     """Script arguments parser.
@@ -195,11 +206,14 @@ def args_parser():
     return parser
 
 
+=======
+>>>>>>> dev
 @logger.catch
 def main(room_json: str, student_json: str, serialize_format: str):
     students = get_students_from_json(student_json)
     rooms = get_rooms_from_json(room_json)
     students_in_room = list_merge(rooms, students)
+
     if serialize_format.lower() == 'xml':
         serialized_xml = XMLSerializer(students_in_room).to_format()
         XMLWriter(serialized_xml).to_file()
@@ -209,6 +223,6 @@ def main(room_json: str, student_json: str, serialize_format: str):
 
 
 if __name__ == '__main__':
-    args_namespace = args_parser().parse_args()
+    args_namespace = args_parser()
     main(args_namespace.rooms, args_namespace.students,
          args_namespace.format)
